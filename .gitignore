@@ -25,4 +25,7 @@ go.work
 # Specific to this project. "service-account-key.json" is where you would put
 # a service account key if you needed it.
 
+# Ignore the binary.
+huguenot
+
 service-account-key.json
