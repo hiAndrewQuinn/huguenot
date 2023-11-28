@@ -5,3 +5,8 @@ One day in fall 2023, I was [hacking away at a news site archive I was working o
 
 So birthed Project Huguenot, an attempt to distil down the shell scripts I had written during that hacking session to make a tool that takes a list of languages and a (possibly-recursive) stack of Markdown files, and translates them all in-place. The ideal was to make it as easy as possible for *returning* users to use -- that is, running `huguenot` in the root directory should be all you need.
 
+## Quickstart
+
+`huguenot` currently only supports the Google Translate API. You'll need to set up a project and get a service account key in JSON format.
+
+Move the account key to here as `service-account-key.json` in the root directory. (Same name as in the `.gitignore`.) Then `go build` and run, and you'll see the first draft.
