@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -37,45 +39,42 @@ func getMdContent(markdownFile string) []byte {
 	return mdContent
 }
 
-func printAST(node ast.Node, level int) {
-	indent := ""
-	for i := 0; i < level; i++ {
-		indent += "  "
-	}
-	log.Printf("%sNode Type: %T\n", indent, node)
-	if node.HasChildren() {
-		for child := node.FirstChild(); child != nil; child = child.NextSibling() {
-			printAST(child, level+1)
-		}
-	}
-}
-
-func translateAST(ctx context.Context, client *translate.Client, node ast.Node, indent string, source []byte) {
+func translateAST(ctx context.Context, client *translate.Client, language language.Tag, node ast.Node, indent string, source []byte) error {
 	log.Printf("%sNode Type: %T", indent, node)
-
-	language := language.English
 
 	if textNode, ok := node.(*ast.Text); ok {
 		segment := textNode.Segment
-		text := string(source[segment.Start:segment.Stop])
-		log.Printf("%sText: %s\n", indent, text)
-		// translate the text and print that too
+		originalText := string(source[segment.Start:segment.Stop])
+		log.Printf("%sText: %s\n", indent, originalText)
 
-		// Perform translation and handle the response
-		translations, err := client.Translate(ctx, []string{text}, language, nil)
+		// Perform translation
+		translations, err := client.Translate(ctx, []string{originalText}, language, nil)
 		if err != nil {
-			log.Fatalf("Failed to translate text: %v", err)
+			return fmt.Errorf("failed to translate text: %v", err)
 		}
 		if len(translations) > 0 {
-			log.Printf("%sTrns: %s\n", indent, translations[0].Text)
+			translatedText := translations[0].Text
+
+			// Create a new text node with the translated text
+			newNode := ast.NewTextSegment(text.NewSegment(segment.Start, segment.Start+len(translatedText)))
+			newNode.AppendChild(newNode, ast.NewString([]byte(translatedText)))
+
+			// Replace the original text node with the new one
+			if parent := textNode.Parent(); parent != nil {
+				parent.ReplaceChild(parent, textNode, newNode)
+			}
 		}
 	}
 
 	if node.HasChildren() {
 		for child := node.FirstChild(); child != nil; child = child.NextSibling() {
-			translateAST(ctx, client, child, indent+"  ", source)
+			err := translateAST(ctx, client, language, child, indent+"  ", source)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func main() {
@@ -90,6 +89,20 @@ func main() {
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	)
 	document := markdown.Parser().Parse(text.NewReader(mdContent))
-	translateAST(ctx, client, document, "", mdContent)
+	err := translateAST(ctx, client, language.English, document, "", mdContent)
+	if err != nil {
+		log.Fatalf("Error during translation: %v", err)
+	}
+
+	var buf bytes.Buffer
+	if err := markdown.Renderer().Render(&buf, mdContent, document); err != nil {
+		log.Fatalf("Failed to render markdown: %v", err)
+	}
+
+	err = os.WriteFile("output.md", buf.Bytes(), 0644)
+	if err != nil {
+		log.Fatalf("Failed to write output file: %v", err)
+	}
+
 	log.Printf("---")
 }
