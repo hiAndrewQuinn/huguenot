@@ -16,11 +16,20 @@ import (
 	"google.golang.org/api/option"
 )
 
-func checkArgs(args []string) string {
-	if len(args) != 2 {
-		log.Fatalf("Usage: %s <markdown-file>", args[0])
+func checkArgs(args []string) (string, language.Tag) {
+	if len(args) != 3 {
+		log.Fatalf("Usage: %s <markdown-file> <language-code>", args[0])
 	}
-	return args[1]
+	mdFile := args[1]
+	langCode := args[2]
+
+	// Parse the language code
+	lang, err := language.Parse(langCode)
+	if err != nil {
+		log.Fatalf("Invalid language code: %v", err)
+	}
+
+	return mdFile, lang
 }
 
 func makeClient(ctx context.Context, service_account_keyfile string) *translate.Client {
@@ -40,12 +49,9 @@ func getMdContent(markdownFile string) []byte {
 }
 
 func translateAST(ctx context.Context, client *translate.Client, language language.Tag, node ast.Node, indent string, source []byte) error {
-	log.Printf("%sNode Type: %T", indent, node)
-
 	if textNode, ok := node.(*ast.Text); ok {
 		segment := textNode.Segment
 		originalText := string(source[segment.Start:segment.Stop])
-		log.Printf("%sText: %s\n", indent, originalText)
 
 		// Perform translation
 		translations, err := client.Translate(ctx, []string{originalText}, language, nil)
@@ -83,13 +89,14 @@ func main() {
 	client := makeClient(ctx, "service-account-key.json")
 	defer client.Close()
 
-	mdContent := getMdContent(checkArgs(os.Args))
+	mdFile, lang := checkArgs(os.Args)
+	mdContent := getMdContent(mdFile)
 
 	markdown := goldmark.New(
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	)
 	document := markdown.Parser().Parse(text.NewReader(mdContent))
-	err := translateAST(ctx, client, language.English, document, "", mdContent)
+	err := translateAST(ctx, client, lang, document, "", mdContent)
 	if err != nil {
 		log.Fatalf("Error during translation: %v", err)
 	}
