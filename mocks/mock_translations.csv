@@ -1,0 +1,8 @@
+source_language,source_text,target_language,translated_text
+en,Hello,es,Hola
+en,Hello,fi,Hei
+es,Hola,en,Hello
+es,Hola,fi,Hei
+fi,Hei,en,Hello
+fi,Hei,es,Hola
+
