@@ -16,16 +16,16 @@ func TestMockTranslator(t *testing.T) {
 
 	// Define a test case
 	tests := []struct {
-		name           string
-		sourceText     string
+		name       string
+		sourceText string
 		targetLang language.Tag
-		want           string
+		want       string
 	}{
 		{
-			name:           "English to Spanish",
-			sourceText:     "Hello",
+			name:       "English to Spanish",
+			sourceText: "Hello",
 			targetLang: language.Spanish,
-			want:           "Hola",
+			want:       "Hola",
 		},
 		// Add more test cases as needed
 	}
@@ -44,4 +44,3 @@ func TestMockTranslator(t *testing.T) {
 		})
 	}
 }
-
