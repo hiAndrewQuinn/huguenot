@@ -7,6 +7,17 @@ So birthed Project Huguenot, an attempt to distil down the shell scripts I had w
 
 ## Quickstart
 
+```bash
+cd clone https://github.com/hiAndrewQuinn/huguenot.git
+cd huguenot/
+
+go build
+go test -v
+
+./huguenot README
+```
+
+## Concerns 
 `huguenot` currently only supports the Google Translate API. You'll need to set up a project and get a service account key in JSON format.
 
 Move the account key to here as `service-account-key.json` in the root directory. (Same name as in the `.gitignore`.) Then `go build` and run, and you'll see the first draft.
